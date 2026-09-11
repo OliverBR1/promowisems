@@ -5,6 +5,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.MountableFile;
 import org.wiremock.integrations.testcontainers.WireMockContainer;
 
 import java.util.Map;
@@ -13,12 +14,14 @@ import java.util.Map;
 public class ContainerConfig {
 
     @Container
-    static WireMockContainer wireMockContainer = new WireMockContainer("docker pull wiremock/wiremock:3.13.2");
+    static WireMockContainer wireMockContainer =
+            new WireMockContainer("wiremock/wiremock:3.13.2")
+                    .withCopyToContainer(MountableFile.forClasspathResource("wiremock"), "/home/wiremock");
 
     public static Map<String, String> getProperties() {
         return Map.of(
-                "partner.api.url", "",
-                "telemetre.api.url", ""
+                "partner.api.url", getWireMockUrl(),
+                "telemetry.api.url", getWireMockUrl()
         );
     }
 
@@ -31,7 +34,7 @@ public class ContainerConfig {
         });
     }
 
-    public String getWireMockUrl() {
+    public static String getWireMockUrl() {
         return "http://" + wireMockContainer.getHost() + ":" + wireMockContainer.getFirstMappedPort();
     }
 }
