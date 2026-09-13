@@ -102,9 +102,9 @@ public class CouponService {
 
         try {
             telemetryClient.sendEvent(appApiKey, payload);
-            logger.info("Telemtry sent {}", payload);
+            logger.info("Telemetry sent {}", payload);
         } catch (Exception e) {
-            logger.error("Error while sending telemtry - {}", payload);
+            logger.error("Error while sending telemetry - {}", payload);
         }
     }
 }

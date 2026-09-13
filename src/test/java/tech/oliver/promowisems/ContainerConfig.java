@@ -26,7 +26,7 @@ public class ContainerConfig {
     }
 
     @DynamicPropertySource
-    public void dynamicPropertySource(DynamicPropertyRegistry registry) {
+    public static void dynamicPropertySource(DynamicPropertyRegistry registry) {
         WireMock.configureFor(wireMockContainer.getHost(), wireMockContainer.getPort());
 
         getProperties().entrySet().forEach(kv -> {

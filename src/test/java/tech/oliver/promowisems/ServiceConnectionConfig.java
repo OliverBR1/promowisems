@@ -10,7 +10,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.utility.DockerImageName;
 
 @TestConfiguration(proxyBeanMethods = false)
-class ServiceConnectionConfig {
+public class ServiceConnectionConfig {
 
 	@Container
 	static GenericContainer<?> genericContainer = new GenericContainer<>();
