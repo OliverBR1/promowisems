@@ -1,0 +1,29 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/api/partners/v1/coupons/status",
+    "headers": {
+      "x-api-key": {
+        "equalTo": "valid-api-key"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "equalToJson": {
+          "couponCode": "PROMO50"
+        }
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "couponCode": "PROMO50",
+      "status": "ACTIVE",
+      "discountPercentage": 0
+    }
+  }
+}
