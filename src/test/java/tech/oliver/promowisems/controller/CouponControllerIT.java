@@ -14,15 +14,17 @@ import org.springframework.test.web.servlet.ResultActions;
 import tech.oliver.promowisems.ContainerConfig;
 import tech.oliver.promowisems.ServiceConnectionConfig;
 import tech.oliver.promowisems.entity.Coupon;
+import tech.oliver.promowisems.entity.CouponHistory;
 import tech.oliver.promowisems.repository.CouponHistoryRepository;
 import tech.oliver.promowisems.repository.CouponRepository;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.matching.RequestPatternBuilder.newRequestPattern;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -35,10 +37,8 @@ public class CouponControllerIT extends ContainerConfig {
 
     @Autowired
     private MockMvc mockMvc;
-
     @Autowired
     private CouponRepository couponRepository;
-
     @Autowired
     private CouponHistoryRepository couponHistoryRepository;
 
@@ -59,6 +59,7 @@ public class CouponControllerIT extends ContainerConfig {
             int discountPercentage = 50;
             int remainingUsages = 10;
             LocalDateTime validUntil = LocalDateTime.now().plusDays(7);
+
             private ResultActions setupArrangeAct() throws Exception {
 
                 couponRepository.save(new Coupon(couponCode, discountPercentage, remainingUsages, validUntil));
@@ -226,7 +227,57 @@ public class CouponControllerIT extends ContainerConfig {
             }
         }
     }
+
+    @Nested
+    class history {
+
+        String couponCode = "PROMO50";
+        int discountPercentage = 50;
+        boolean valid = true;
+        LocalDateTime recentValidedAt = LocalDateTime.now().minusDays(2).truncatedTo(ChronoUnit.SECONDS);
+        LocalDateTime oldValidatedAt = LocalDateTime.now().minusDays(5).truncatedTo(ChronoUnit.SECONDS);
+
+        private ResultActions setupArrangeAct(boolean fillDb) throws Exception {
+
+            if (fillDb) {
+                couponHistoryRepository.save(new CouponHistory(couponCode, valid, discountPercentage, oldValidatedAt));
+                couponHistoryRepository.save(new CouponHistory(couponCode, valid, discountPercentage, recentValidedAt));
+            }
+
+            return mockMvc.perform(
+                    get(String.format("/api/v1/coupons/history?couponCode=%s", couponCode))
+            );
+        }
+
+        @Test
+        void whenHaveResultsShouldReturnCorrectApiBody() throws Exception {
+            var result = setupArrangeAct(true);
+
+            result.andExpect(status().is(200))
+                    .andExpect(jsonPath("$.length()").value(2))
+                    .andExpect(jsonPath("$[0].couponCode").value(couponCode))
+                    .andExpect(jsonPath("$[0].valid").value(valid))
+                    .andExpect(jsonPath("$[0].discountPercentage").value(discountPercentage))
+                    .andExpect(jsonPath("$[0].validatedAt").value(recentValidedAt.toString()))
+                    .andExpect(jsonPath("$[1].validatedAt").value(oldValidatedAt.toString()));
+        }
+
+        @Test
+        void whenDontHaveResultsShouldReturnCorrectApiBody() throws Exception {
+            var result = setupArrangeAct(false);
+
+            result.andExpect(status().is(200))
+                    .andExpect(jsonPath("$.length()").value(0));
+        }
+
+        @Test
+        void shouldCallTelemtryApi() throws Exception {
+            setupArrangeAct(true);
+
+            WireMock.verify(1, postRequestedFor(urlEqualTo("/v1/events"))
+                    .withHeader("x-api-key", equalTo("valid-api-key"))
+                    .withRequestBody(matchingJsonPath("$.eventType", equalTo("COUPON_HISTORY_VIEW")))
+            );
+        }
+    }
 }
-
-
-
