@@ -1,0 +1,29 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/v1/events",
+    "headers": {
+      "x-api-key": {
+        "equalTo": "valid-api-key"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$.eventType",
+        "equalToJson": {
+          "eventType": "COUPON_HISTORY_VIEW"
+        }
+      }
+    ]
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "eventId": "1231233123",
+      "status": "RECEIVED"
+    }
+  }
+}
